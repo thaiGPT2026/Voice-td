@@ -14,11 +14,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Giải nén dự án Android
+      - name: Giai nen du an Android
         run: |
           rm -rf android
-          unzip -q *.zip
+          unzip -q "$(ls *.zip | head -1)"
           chmod +x android/gradlew
+
+      - name: Sua loi trung phien ban Kotlin
+        run: |
+          F=android/app/build.gradle
+          grep -q kotlin-bom $F || sed -i "s#^dependencies {#dependencies {\n    implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')#" $F
+          sed -i 's/minSdk 24/minSdk 26/' $F
+          cat $F
 
       - uses: actions/setup-java@v4
         with:
@@ -27,16 +34,16 @@ jobs:
 
       - name: Build APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
-      - name: Đổi tên APK
+      - name: Doi ten APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk TrangThaiKhongKhi.apk
 
-      - name: Đưa APK lên mục Releases
+      - name: Dua APK len Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: Trạng thái không khí v1.0.${{ github.run_number }}
+          name: Trang thai khong khi v1.0.${{ github.run_number }}
           files: TrangThaiKhongKhi.apk
 
       - uses: actions/upload-artifact@v4
